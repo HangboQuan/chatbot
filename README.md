@@ -11,6 +11,6 @@
 2. 在resouces目录下找到两个分别为chatglm_async_stream.html 和 chatglm_sync.html，分别在浏览器中打开；然后请求想要的query即可
 
 扩展
-1. 这只是一个很小的Demo简单实现，里面还有很多东西待实现
+1. 这只是一个很小的Demo简单实现，里面还有很多东西待实现，有空再说吧
 
 
