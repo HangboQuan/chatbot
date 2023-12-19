@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatBot Interaction</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    #chat-container {
+      width: 95%;
+      max-width: 900px;
+      height: 75vh;
+      margin-top: 1.5vh;
+      background-color: #f0f0f0;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 5px 20px;
+    }
+
+    .message {
+      margin: 10px 0;
+      overflow-wrap: break-word;
+      font-size: 16px;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 70%;
+    }
+
+    .user-message {
+      text-align: right;
+      align-self: flex-end;
+      background-color: #4CAF50;
+      color: #fff;
+    }
+
+    .bot-message {
+      text-align: left;
+      background-color: #2196F3;
+      color: #fff;
+      white-space: pre-wrap;
+    }
+
+    #input-container {
+      width: 80%;
+      max-width: 600px;
+      margin-top: 1vh;
+      background-color: #f0f0f0;
+      padding: 10px;
+      border-top: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      bottom: 3vh;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 8px;
+      margin-right: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    #send-button {
+      padding: 8px;
+      border: none;
+      background-color: #4CAF50;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+<div id="chat-container">
+</div>
+
+<div id="input-container">
+  <input type="text" id="user-input" placeholder="Type your message...">
+  <button id="send-button" onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+  const chatContainer = document.getElementById('chat-container');
+  const userInput = document.getElementById('user-input');
+  let eventSource = null;
+  let messageQueue = [];
+
+  async function appendMessage(sender, content, className) {
+    const message = document.createElement('div');
+    message.className = `message ${className}`;
+    message.innerHTML = `<strong>${sender}:</strong> ${content}`;
+    chatContainer.appendChild(message);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+
+  async function typeMessage(message, sender, className) {
+    const delay = 50;
+    for (const char of message) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      const lastMessage = chatContainer.lastChild;
+      if (lastMessage && lastMessage.className.includes(className)) {
+        lastMessage.lastChild.textContent += char;
+      } else {
+        await appendMessage(sender, char, className);
+      }
+    }
+  }
+
+  async function handleEventStreamData(event) {
+    let data = event.data;
+    console.log(data);
+    if (event.type === "message") {
+      let lines = data.split("\n");
+      messageQueue.push({ sender: 'ChatBot', content: lines[1], className: 'bot-message' });
+    } else if (event.type === "add") {
+      messageQueue.push({ sender: 'ChatBot', content: data, className: 'bot-message' });
+    } else if (event.type === "finish") {
+      while (messageQueue.length > 0) {
+        const message = messageQueue.shift();
+        await typeMessage(message.content, message.sender, message.className);
+      }
+    }
+  }
+
+  async function sendMessage() {
+    const userMessage = userInput.value.trim();
+    if (userMessage === '') return;
+    appendMessage('You', userMessage, 'user-message');
+    if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+      eventSource = new EventSource(`http://localhost:9090/api/model?query=${userMessage}`, { withCredentials: true });
+      eventSource.addEventListener('message', function (event) {
+        handleEventStreamData(event);
+      });
+      eventSource.addEventListener('add', function (event) {
+        handleEventStreamData(event);
+      });
+      eventSource.addEventListener('finish', function (event) {
+        handleEventStreamData(event);
+      });
+      eventSource.onclose = function (event) {
+        console.log("SSE connection is closed");
+      }
+      eventSource.onerror = function (event) {
+        eventSource.close();
+      }
+    }
+    userInput.value = '';
+  }
+
+  document.getElementById('user-input').addEventListener('keydown', async function (event) {
+    if (event.key === 'Enter') {
+      await sendMessage();
+    }
+  });
+</script>
+</body>
+</html>
