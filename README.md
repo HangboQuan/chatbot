@@ -11,7 +11,7 @@
 2. 在resouces目录下找到两个分别为chatglm_async_stream.html 和 chatglm_sync.html，分别在浏览器中打开；然后请求想要的query即可
 
 扩展和思考
-1. 在并发条件上会不会出现乱序、重复？
+1. 在并发条件下会不会出现乱序、重复？
 2. 这种消息如何设计它的存储？
 
 
