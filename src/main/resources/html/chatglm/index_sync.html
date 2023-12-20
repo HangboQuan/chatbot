@@ -143,7 +143,7 @@
         if (userMessage === '') return;
         appendMessage('You', userMessage, 'user-message');
         if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
-            eventSource = new EventSource(`http://localhost:9090/api/model?query=${userMessage}`, { withCredentials: true });
+            eventSource = new EventSource(`http://localhost:9090/api/model/chatglm?query=${userMessage}`, { withCredentials: true });
             eventSource.addEventListener('message', function (event) {
                 handleEventStreamData(event);
             });

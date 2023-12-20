@@ -1,5 +1,6 @@
 package com.alibaba.controller;
 
+import com.alibaba.entity.MinimaxRequest;
 import com.alibaba.utils.TokenAuthUtil;
 import com.google.gson.Gson;
 import com.zhipu.oapi.service.v3.ModelApiRequest;
@@ -21,13 +22,17 @@ import java.util.concurrent.Executors;
 
 /**
  * @author quanhangbo
- * @date 2023/12/19 18:40
+ * @date 2023/12/20 14:37
  */
 @Slf4j
 @RestController
-public class ChatGLMController {
+public class MinimaxController {
 
-    @GetMapping(value = "/api/model/chatglm", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    private static final String MODEL = "abab5.5-chat";
+    private static final String API_KEY = "YOUR_API_KEY";
+    private static final String GROUP_ID = "YOUR_GROUP_ID";
+
+    @GetMapping(value = "/api/model/minimax", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<ResponseBodyEmitter> chat(@RequestParam String query) {
         log.info("query={}", query);
         SseEmitter emitter = new SseEmitter();
@@ -35,26 +40,38 @@ public class ChatGLMController {
         ExecutorService threadPool = Executors.newFixedThreadPool(1);
         threadPool.execute(() -> {
             try {
-                ModelApiRequest modelApiRequest = new ModelApiRequest();
-                modelApiRequest.setRequestId(UUID.randomUUID().toString().replace("_", ""));
-                modelApiRequest.setTopP(0.7f);
-                modelApiRequest.setIncremental(true);
-                modelApiRequest.setTemperature(0.9f);
-                modelApiRequest.setPrompt(Arrays.asList(new ModelApiRequest.Prompt("user", query)));
 
-                String jsonPayload = new Gson().toJson(modelApiRequest);
+                MinimaxRequest minimaxRequest = new MinimaxRequest();
+                minimaxRequest.setRequestId(UUID.randomUUID().toString().replace("_", ""));
+                minimaxRequest.setModel(MinimaxController.MODEL);
+                minimaxRequest.setStream(true);
+                minimaxRequest.setTopP(0.7f);
+                minimaxRequest.setTemperature(0.9f);
+                minimaxRequest.setTokensToGenerate(4096);
+                minimaxRequest.setMessages(
+                        Arrays.asList(new MinimaxRequest.Message().
+                                setSender_type("USER").setSender_name("YOU").setText(query))
+                );
+
+                minimaxRequest.setBot_setting(
+                        Arrays.asList(new MinimaxRequest.BotSetting().
+                                setBot_name("MM智能助理").setContent("MM智能助理是一款由MiniMax自研的，没有调用其他产品的接口的大型语言模型。MiniMax是一家中国科技公司，一直致力于进行大模型相关的研究。"))
+                );
+
+                minimaxRequest.setReply_constraints(
+                        new MinimaxRequest.ReplyConstraints().
+                                setSender_type("BOT").setSender_name("MM智能助理")
+                );
+
+
+                String jsonPayload = new Gson().toJson(minimaxRequest);
                 System.out.println(jsonPayload);
-
-                // 输入你自己的api_key
-                String apiKey = "YOUR_API_KEY";
-                String[] ans = apiKey.split("\\.");
-                String token = TokenAuthUtil.getToken(ans[0], ans[1]);
 
                 OkHttpClient client = new OkHttpClient();
                 Request request = new Request.Builder()
-                        .url("http://open.bigmodel.cn/api/paas/v3/model-api/chatglm_lite/sse-invoke")
+                        .url("https://api.minimax.chat/v1/text/chatcompletion_pro?GroupId=" + GROUP_ID)
                         .post(RequestBody.create(okhttp3.MediaType.parse("application/json"), jsonPayload))
-                        .header("Authorization", "Bearer " + token)
+                        .header("Authorization", "Bearer " + API_KEY)
                         .header("Content-Type", "application/json")
                         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                         .header("Cache-Control","no-cache")
