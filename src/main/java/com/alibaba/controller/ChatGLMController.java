@@ -17,6 +17,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author quanhangbo
@@ -27,10 +29,12 @@ import java.util.UUID;
 public class ChatGLMController {
 
     @GetMapping(value = "/api/model", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<ResponseBodyEmitter> chat(@RequestParam String query, HttpServletResponse servletResponse) {
+    public ResponseEntity<ResponseBodyEmitter> chat(@RequestParam String query) {
         log.info("query={}", query);
         SseEmitter emitter = new SseEmitter();
-        Thread thread = new Thread(() -> {
+
+        ExecutorService threadPool = Executors.newFixedThreadPool(1);
+        threadPool.execute(() -> {
             try {
                 ModelApiRequest modelApiRequest = new ModelApiRequest();
                 modelApiRequest.setRequestId(UUID.randomUUID().toString().replace("_", ""));
@@ -52,7 +56,7 @@ public class ChatGLMController {
                         .post(RequestBody.create(okhttp3.MediaType.parse("application/json"), jsonPayload))
                         .header("Authorization", "Bearer " + token)
                         .header("Content-Type", "application/json")
-                        .header("User-Agent", "Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)")
+                        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                         .header("Cache-Control","no-cache")
                         .header("Accept", "text/event-stream")
                         .build();
@@ -61,7 +65,6 @@ public class ChatGLMController {
                     ResponseBody body = response.body();
                     String responseData = body.string();
                     log.info("Sending SSE event: {}", responseData);
-                    String data = responseData;
                     emitter.send(SseEmitter.event().data(responseData).name("message"));
                 } catch (IOException e) {
                     emitter.completeWithError(e);
@@ -73,7 +76,8 @@ public class ChatGLMController {
                 e.printStackTrace();
             }
         });
-        thread.start();
+//        Thread thread = new Thread();
+//        thread.start();
         return ResponseEntity.ok(emitter);
     }
 }
