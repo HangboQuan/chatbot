@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
 @RestController
 public class ChatGLMController {
 
+    // https://open.bigmodel.cn/usercenter/apikeys
     @GetMapping(value = "/api/model/chatglm", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<ResponseBodyEmitter> chat(@RequestParam String query) {
         log.info("query={}", query);

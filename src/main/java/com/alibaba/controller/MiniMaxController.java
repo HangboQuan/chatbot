@@ -1,9 +1,7 @@
 package com.alibaba.controller;
 
-import com.alibaba.entity.MinimaxRequest;
-import com.alibaba.utils.TokenAuthUtil;
+import com.alibaba.entity.MiniMaxRequest;
 import com.google.gson.Gson;
-import com.zhipu.oapi.service.v3.ModelApiRequest;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.springframework.http.MediaType;
@@ -26,8 +24,9 @@ import java.util.concurrent.Executors;
  */
 @Slf4j
 @RestController
-public class MinimaxController {
+public class MiniMaxController {
 
+    // https://api.minimax.chat/user-center/basic-information/interface-key
     private static final String MODEL = "abab5.5-chat";
     private static final String API_KEY = "YOUR_API_KEY";
     private static final String GROUP_ID = "YOUR_GROUP_ID";
@@ -41,25 +40,25 @@ public class MinimaxController {
         threadPool.execute(() -> {
             try {
 
-                MinimaxRequest minimaxRequest = new MinimaxRequest();
+                MiniMaxRequest minimaxRequest = new MiniMaxRequest();
                 minimaxRequest.setRequestId(UUID.randomUUID().toString().replace("_", ""));
-                minimaxRequest.setModel(MinimaxController.MODEL);
+                minimaxRequest.setModel(MiniMaxController.MODEL);
                 minimaxRequest.setStream(true);
                 minimaxRequest.setTopP(0.7f);
                 minimaxRequest.setTemperature(0.9f);
                 minimaxRequest.setTokensToGenerate(4096);
                 minimaxRequest.setMessages(
-                        Arrays.asList(new MinimaxRequest.Message().
+                        Arrays.asList(new MiniMaxRequest.Message().
                                 setSender_type("USER").setSender_name("YOU").setText(query))
                 );
 
                 minimaxRequest.setBot_setting(
-                        Arrays.asList(new MinimaxRequest.BotSetting().
+                        Arrays.asList(new MiniMaxRequest.BotSetting().
                                 setBot_name("MM智能助理").setContent("MM智能助理是一款由MiniMax自研的，没有调用其他产品的接口的大型语言模型。MiniMax是一家中国科技公司，一直致力于进行大模型相关的研究。"))
                 );
 
                 minimaxRequest.setReply_constraints(
-                        new MinimaxRequest.ReplyConstraints().
+                        new MiniMaxRequest.ReplyConstraints().
                                 setSender_type("BOT").setSender_name("MM智能助理")
                 );
 

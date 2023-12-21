@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Data
 @Accessors
-public class MinimaxRequest {
+public class MiniMaxRequest {
 
     private String requestId;
     private String sessionId;
