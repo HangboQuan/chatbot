@@ -10,7 +10,7 @@
 1. 在chatglm开放平台中找到对应的apiKey填写到代码中相应的位置上，启动Spring Boot项目
 2. 在resouces目录下找到两个分别为chatglm_async_stream.html 和 chatglm_sync.html，分别在浏览器中打开；然后请求想要的query即可
 
-进展：目前正在接入Minimax大模型官方api中...
+进展：接入Minimax和文心一言官方api中后端返回数据已调通...
 
 扩展和思考
 1. 在并发条件下会不会出现乱序、重复？
